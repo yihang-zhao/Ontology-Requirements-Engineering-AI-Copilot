@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Miro Plugin - Recombination</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+  <style>
+    .user-story {
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .user-story:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transform: translateY(-5px);
+    }
+
+    .user-story-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+
+    .story-btn {
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 5px;
+      border: 2px solid;
+      background-color: white;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .story-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .story-btn.selected {
+      background-color: var(--color);
+      color: white;
+    }
+
+    .refresh-btn {
+      margin-top: 10px;
+    }
+
+    .highlighted {
+      padding: 2px 5px;
+      border-radius: 3px;
+      transition: background-color 0.3s ease;
+    }
+
+    .option-btn {
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: 2px solid;
+      background-color: white;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .option-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .option-btn.selected {
+      background-color: var(--color);
+      color: white;
+    }
+
+    .user-story-container {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Miro Plugin</a>
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="index.html">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="ideation.html">Ideation</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="recombination.html">Recombination</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div id="userStoryContainer" class="container mt-4">
+    <!-- User stories will be dynamically added here -->
+  </div>
+
+  <div class="text-center mt-4">
+    <button id="suggestionsBtn" class="btn btn-primary">Give Suggestions</button>
+  </div>
+
+  <div id="optionSelectionContainer" class="container mt-4" style="display: none;">
+    <!-- Option selection content -->
+  </div>
+
+  <div class="text-center mt-4">
+    <button id="resultsBtn" class="btn btn-primary" style="display: none;">Suggest Results</button>
+  </div>
+
+  <div class="text-center mt-4">
+    <button id="startAgainBtn" class="btn btn-secondary" style="display: none;">Start Again</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // User stories data
+    const userStories = [
+      {
+        title: 'Music Recommendation System',
+        persona: 'John, a software engineer',
+        goal: 'Develop a music recommendation system',
+        keywords: 'music recommendation, collaborative filtering, content-based filtering',
+        scenarioBefore: 'Users struggle to discover new music based on their preferences',
+        scenarioAfter: 'The recommendation system suggests personalized music to users',
+        stories: '"Bohemian Rhapsody" is a song by the British rock band "Queen"'
+      },
+      {
+        title: 'Sentiment Analysis',
+        persona: 'Emily, a data scientist',
+        goal: 'Analyze customer sentiment from product reviews',
+        keywords: 'sentiment analysis, natural language processing, text mining',
+        scenarioBefore: 'Companies lack insights into customer opinions and feedback',
+        scenarioAfter: 'Sentiment analysis provides valuable insights for product improvement',
+        stories: '"The Lord of the Rings" is an epic high fantasy novel by J.R.R. Tolkien'
+      },
+      {
+        title: 'Targeted Advertising',
+        persona: 'Michael, a marketing manager',
+        goal: 'Create targeted advertising campaigns',
+        keywords: 'customer segmentation, targeted advertising, marketing analytics',
+        scenarioBefore: 'Advertising campaigns have low conversion rates due to broad targeting',
+        scenarioAfter: 'Targeted advertising improves campaign effectiveness and ROI',
+        stories: '"Mona Lisa" is a famous oil painting by Leonardo da Vinci'
+      },
+      {
+        title: 'Image Classification',
+        persona: 'Sarah, a research scientist',
+        goal: 'Develop a machine learning model for image classification',
+        keywords: 'image classification, convolutional neural networks, transfer learning',
+        scenarioBefore: 'Manual image categorization is time-consuming and prone to errors',
+        scenarioAfter: 'The machine learning model automates image classification with high accuracy',
+        stories: '"The Starry Night" is a painting by the Dutch post-impressionist painter Vincent van Gogh'
+      }
+    ];
+
+    // Function to generate user stories
+    function generateUserStories() {
+      const userStoryContainer = document.getElementById('userStoryContainer');
+      userStoryContainer.innerHTML = '';
+
+      for (let i = 0; i < userStories.length; i += 2) {
+        const userStoryRow = document.createElement('div');
+        userStoryRow.classList.add('row', 'justify-content-center', 'user-story-container');
+
+        for (let j = i; j < i + 2 && j < userStories.length; j++) {
+          const story = userStories[j];
+          const userStoryElement = document.createElement('div');
+          userStoryElement.classList.add('col-md-5', 'user-story');
+          userStoryElement.innerHTML = `
+            <div class="user-story-title">${story.title}</div>
+            <div class="persona">${story.persona}</div>
+            <div class="goal">${story.goal}</div>
+            <div class="keywords">${story.keywords}</div>
+            <div class="scenario-before">${story.scenarioBefore}</div>
+            <div class="scenario-after">${story.scenarioAfter}</div>
+            <div class="stories">${story.stories}</div>
+            <div class="button-container">
+              <button class="story-btn" style="--color: #ff9999;" data-color="#ff9999" data-section="scenario-before">Scenario Before</button>
+              <button class="story-btn" style="--color: #9999ff;" data-color="#9999ff" data-section="keywords">Keywords</button>
+              <button class="story-btn" style="--color: #99ff99;" data-color="#99ff99" data-section="goal">Goal</button>
+              <button class="story-btn" style="--color: #ffcc99;" data-color="#ffcc99" data-section="scenario-after">Scenario After</button>
+              <button class="story-btn" style="--color: #cc99ff;" data-color="#cc99ff" data-section="stories">Stories</button>
+              <button class="story-btn" style="--color: #99ffcc;" data-color="#99ffcc" data-section="persona">Persona</button>
+            </div>
+          `;
+          userStoryRow.appendChild(userStoryElement);
+        }
+
+        userStoryContainer.appendChild(userStoryRow);
+      }
+
+      const storyButtons = document.querySelectorAll('.story-btn');
+      storyButtons.forEach(button => {
+        const color = button.dataset.color;
+        button.style.borderColor = color;
+
+        button.addEventListener('click', () => {
+          const section = button.dataset.section;
+          const userStory = button.closest('.user-story');
+          const sectionElement = userStory.querySelector(`.${section}`);
+
+          if (button.classList.contains('selected')) {
+            button.classList.remove('selected');
+            sectionElement.classList.remove('highlighted');
+            sectionElement.style.backgroundColor = '';
+          } else {
+            button.classList.add('selected');
+            sectionElement.classList.add('highlighted');
+            sectionElement.style.backgroundColor = color;
+          }
+        });
+      });
+    }
+
+    // Function to generate option selection
+    function generateOptionSelection() {
+      const optionSelectionContainer = document.getElementById('optionSelectionContainer');
+      optionSelectionContainer.innerHTML = '';
+
+      const selectedButtons = document.querySelectorAll('.story-btn.selected');
+      selectedButtons.forEach(button => {
+        const section = button.dataset.section;
+        const color = button.dataset.color;
+        const optionRow = document.createElement('div');
+        optionRow.classList.add('row', 'justify-content-center', 'mb-3');
+
+        const optionCol = document.createElement('div');
+        optionCol.classList.add('col-md-8');
+
+        const sectionHeading = document.createElement('h5');
+        sectionHeading.textContent = section.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        optionCol.appendChild(sectionHeading);
+
+        const options = [
+          'Enhanced user experience',
+          'Improved efficiency',
+          'Increased customer satisfaction',
+          'Competitive advantage',
+          'Cost reduction',
+          'Data-driven decision making'
+        ];
+
+        options.forEach(option => {
+          const optionButton = document.createElement('button');
+          optionButton.classList.add('option-btn');
+          optionButton.style.setProperty('--color', color);
+          optionButton.style.borderColor = color;
+          optionButton.textContent = option;
+          optionButton.addEventListener('click', () => {
+            if (optionButton.classList.contains('selected')) {
+              optionButton.classList.remove('selected');
+            } else {
+              optionButton.classList.add('selected');
+            }
+          });
+          optionCol.appendChild(optionButton);
+        });
+
+        optionRow.appendChild(optionCol);
+        optionSelectionContainer.appendChild(optionRow);
+      });
+    }
+
+    // Function to generate new user stories
+    function generateNewUserStories() {
+      const newUserStories = [
+        {
+          title: 'Predictive Maintenance',
+          persona: 'David, an industrial engineer',
+          goal: 'Implement predictive maintenance for manufacturing equipment',
+          keywords: 'predictive maintenance, machine learning, sensor data',
+          scenarioBefore: 'Equipment failures lead to unplanned downtime and production losses',
+          scenarioAfter: 'Predictive maintenance optimizes equipment performance and reduces downtime',
+          stories: '"The Persistence of Memory" is a surrealist painting by Salvador Dalí'
+        },
+        {
+          title: 'Fraud Detection',
+          persona: 'Olivia, a financial analyst',
+          goal: 'Develop a fraud detection system for financial transactions',
+          keywords: 'fraud detection, anomaly detection, machine learning',
+          scenarioBefore: 'Fraudulent activities result in significant financial losses',
+          scenarioAfter: 'The fraud detection system identifies and prevents fraudulent transactions',
+          stories: '"The Catcher in the Rye" is a novel by J.D. Salinger'
+        },
+        {
+          title: 'Personalized Medicine',
+          persona: 'Alex, a medical researcher',
+          goal: 'Implement personalized medicine using genetic data',
+          keywords: 'personalized medicine, genomics, precision healthcare',
+          scenarioBefore: 'One-size-fits-all treatments have limited effectiveness',
+          scenarioAfter: 'Personalized medicine tailors treatments to individual patient characteristics',
+          stories: '"The Thinker" is a bronze sculpture by Auguste Rodin'
+        },
+        {
+          title: 'Supply Chain Optimization',
+          persona: 'Emma, a supply chain manager',
+          goal: 'Optimize supply chain operations using data analytics',
+          keywords: 'supply chain optimization, logistics, data analytics',
+          scenarioBefore: 'Inefficient supply chain processes lead to delays and increased costs',
+          scenarioAfter: 'Optimized supply chain improves efficiency and reduces operational costs',
+          stories: '"The Great Gatsby" is a novel by F. Scott Fitzgerald'
+        }
+      ];
+
+      const userStoryContainer = document.getElementById('userStoryContainer');
+      userStoryContainer.innerHTML = '';
+
+      newUserStories.forEach(story => {
+        const userStoryElement = document.createElement('div');
+        userStoryElement.classList.add('user-story');
+        userStoryElement.innerHTML = `
+          <div class="user-story-title">${story.title}</div>
+          <div class="persona">${story.persona}</div>
+          <div class="goal">${story.goal}</div>
+          <div class="keywords">${story.keywords}</div>
+          <div class="scenario-before">${story.scenarioBefore}</div>
+          <div class="scenario-after">${story.scenarioAfter}</div>
+          <div class="stories">${story.stories}</div>
+          <button class="btn btn-secondary refresh-btn">Refresh</button>
+        `;
+        userStoryContainer.appendChild(userStoryElement);
+
+        const refreshButton = userStoryElement.querySelector('.refresh-btn');
+        refreshButton.addEventListener('click', () => {
+          const randomIndex = Math.floor(Math.random() * newUserStories.length);
+          const randomStory = newUserStories[randomIndex];
+          userStoryElement.innerHTML = `
+            <div class="user-story-title">${randomStory.title}</div>
+            <div class="persona">${randomStory.persona}</div>
+            <div class="goal">${randomStory.goal}</div>
+            <div class="keywords">${randomStory.keywords}</div>
+            <div class="scenario-before">${randomStory.scenarioBefore}</div>
+            <div class="scenario-after">${randomStory.scenarioAfter}</div>
+            <div class="stories">${randomStory.stories}</div>
+            <button class="btn btn-secondary refresh-btn">Refresh</button>
+          `;
+        });
+      });
+    }
+
+    // Event listener for "Give Suggestions" button
+    document.getElementById('suggestionsBtn').addEventListener('click', () => {
+      document.getElementById('userStoryContainer').style.display = 'none';
+      document.getElementById('suggestionsBtn').style.display = 'none';
+      document.getElementById('optionSelectionContainer').style.display = 'block';
+      document.getElementById('resultsBtn').style.display = 'inline-block';
+      generateOptionSelection();
+    });
+
+    // Event listener for "Suggest Results" button
+    document.getElementById('resultsBtn').addEventListener('click', () => {
+      document.getElementById('optionSelectionContainer').style.display = 'none';
+      document.getElementById('resultsBtn').style.display = 'none';
+      document.getElementById('userStoryContainer').style.display = 'block';
+      document.getElementById('startAgainBtn').style.display = 'inline-block';
+      generateNewUserStories();
+    });
+    
+    // Event listener for "Start Again" button
+    document.getElementById('startAgainBtn').addEventListener('click', () => {
+      document.getElementById('userStoryContainer').style.display = 'block';
+      document.getElementById('startAgainBtn').style.display = 'none';
+      document.getElementById('suggestionsBtn').style.display = 'inline-block';
+
+      const storyButtons = document.querySelectorAll('.story-btn');
+      storyButtons.forEach(button => {
+        button.classList.remove('selected');
+        const section = button.dataset.section;
+        const userStory = button.closest('.user-story');
+        const sectionElement = userStory.querySelector(`.${section}`);
+        sectionElement.classList.remove('highlighted');
+        sectionElement.style.backgroundColor = '';
+      });
+      generateUserStories();
+    });
+    // Generate initial user stories
+    generateUserStories();
+  </script>
+</body>
+</html>
+
+
+
