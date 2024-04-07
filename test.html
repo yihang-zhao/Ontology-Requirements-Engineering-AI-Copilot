@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORSD</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f0f0f0;
+      padding-top: 60px;
+    }
+
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    .user-story {
+      background-color: #333;
+      color: white;
+      border-radius: 5px;
+      padding: 20px;
+      margin-bottom: 20px;
+      cursor: move;
+      transition: all 0.3s ease;
+    }
+
+    .user-story:hover {
+      transform: scale(1.05);
+    }
+
+    .user-story-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .group-container {
+      background-color: #fff;
+      border-radius: 5px;
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      cursor: move;
+    }
+
+    .group-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .priority {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #999;
+    }
+
+    .button-container {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .dragging {
+      opacity: 0.5;
+    }
+
+    .placeholder {
+      background-color: #ccc;
+      border: 2px dashed #999;
+      margin-bottom: 20px;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Miro Plugin</a>
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="index.html">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="ideation.html">Ideation</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="recombination.html">Recombination</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="orsd.html">ORSD</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <div id="userStoryContainer">
+      <!-- User stories will be dynamically added here -->
+    </div>
+
+    <div class="button-container text-center">
+      <button id="groupBtn" class="btn btn-primary me-2">Group User Stories</button>
+      <button id="priorityBtn" class="btn btn-secondary" disabled>Assign Priority</button>
+      <button id="startAgainBtn" class="btn btn-danger" disabled>Start Again</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // User stories data
+    const userStories = [
+      {
+        title: 'Ontology Development',
+        persona: 'As an ontology engineer',
+        goal: 'I want to create a domain-specific ontology'
+      },
+      {
+        title: 'Ontology Integration',
+        persona: 'As a knowledge engineer',
+        goal: 'I want to integrate multiple ontologies'
+      },
+      {
+        title: 'Ontology Visualization',
+        persona: 'As a data scientist',
+        goal: 'I want to visualize the ontology structure'
+      },
+      {
+        title: 'Ontology Alignment',
+        persona: 'As an ontology expert',
+        goal: 'I want to align ontologies from different domains'
+      },
+      {
+        title: 'Ontology Reasoning',
+        persona: 'As a researcher',
+        goal: 'I want to perform reasoning over the ontology'
+      },
+      {
+        title: 'Ontology Validation',
+        persona: 'As a domain expert',
+        goal: 'I want to validate the ontology against domain knowledge'
+      }
+    ];
+
+    // Function to generate user stories
+    function generateUserStories() {
+      const userStoryContainer = document.getElementById('userStoryContainer');
+      userStoryContainer.innerHTML = '';
+
+      userStories.forEach(story => {
+        const userStoryElement = document.createElement('div');
+        userStoryElement.classList.add('user-story');
+        userStoryElement.style.position = 'absolute';
+        userStoryElement.style.left = `${Math.random() * 80}%`;
+        userStoryElement.style.top = `${Math.random() * 60}%`;
+        userStoryElement.innerHTML = `
+          <div class="user-story-title">${story.title}</div>
+          <div class="persona">${story.persona}</div>
+          <div class="goal">${story.goal}</div>
+        `;
+        userStoryContainer.appendChild(userStoryElement);
+      });
+    }
+
+    // Function to group user stories
+    function groupUserStories() {
+      const userStoryContainer = document.getElementById('userStoryContainer');
+      userStoryContainer.innerHTML = '';
+
+      const groupRow = document.createElement('div');
+      groupRow.classList.add('row', 'justify-content-center');
+      groupRow.id = 'groupRow';
+
+      const groupContainer1 = document.createElement('div');
+      groupContainer1.classList.add('col-md-5', 'group-container');
+      groupContainer1.innerHTML = `
+        <div class="group-title">Group 1</div>
+        <div id="group1" class="group"></div>
+      `;
+      groupRow.appendChild(groupContainer1);
+
+      const groupContainer2 = document.createElement('div');
+      groupContainer2.classList.add('col-md-5', 'group-container');
+      groupContainer2.innerHTML = `
+        <div class="group-title">Group 2</div>
+        <div id="group2" class="group"></div>
+      `;
+      groupRow.appendChild(groupContainer2);
+
+      userStoryContainer.appendChild(groupRow);
+
+      const group1 = document.getElementById('group1');
+      const group2 = document.getElementById('group2');
+
+      userStories.forEach((story, index) => {
+        const userStoryElement = document.createElement('div');
+        userStoryElement.classList.add('user-story');
+        userStoryElement.innerHTML = `
+          <div class="user-story-title">${story.title}</div>
+          <div class="persona">${story.persona}</div>
+          <div class="goal">${story.goal}</div>
+        `;
+
+        if (index < 3) {
+          group1.appendChild(userStoryElement);
+        } else {
+          group2.appendChild(userStoryElement);
+        }
+      });
+    }
+
+    // Function to assign priority
+    function assignPriority() {
+      const groupContainers = document.querySelectorAll('.group-container');
+      const userStories = document.querySelectorAll('.user-story');
+
+      // Make groups draggable
+      groupContainers.forEach(container => {
+        container.setAttribute('draggable', 'true');
+        container.addEventListener('dragstart', dragStartGroup);
+        container.addEventListener('dragend', dragEndGroup);
+      });
+
+      // Make group row droppable
+      const groupRow = document.getElementById('groupRow');
+      groupRow.addEventListener('dragover', dragOverGroup);
+      groupRow.addEventListener('drop', dropGroup);
+
+      // Assign priority numbers
+      groupContainers.forEach((container, index) => {
+        container.querySelector('.group-title').textContent = `Group ${index + 1} (Priority: ${index + 1})`;
+        container.querySelectorAll('.user-story').forEach((story, storyIndex) => {
+          const priorityElement = document.createElement('div');
+          priorityElement.classList.add('priority');
+          priorityElement.textContent = `Priority: ${storyIndex + 1}`;
+          story.appendChild(priorityElement);
+        });
+      });
+
+      // Make user stories draggable
+      userStories.forEach(story => {
+        story.setAttribute('draggable', 'true');
+        story.addEventListener('dragstart', dragStart);
+        story.addEventListener('dragend', dragEnd);
+      });
+
+      // Make groups droppable for user stories
+      const groups = document.querySelectorAll('.group');
+      groups.forEach(group => {
+        group.addEventListener('dragover', dragOver);
+        group.addEventListener('drop', drop);
+      });
+    }
+
+    // Drag and drop event handlers for user stories
+    let draggedItem = null;
+
+    function dragStart(event) {
+      draggedItem = event.target;
+      event.target.classList.add('dragging');
+    }
+
+    function dragEnd(event) {
+      event.target.classList.remove('dragging');
+    }
+
+    function dragOver(event) {
+      event.preventDefault();
+      const group = event.target.closest('.group');
+      if (group && group.contains(draggedItem)) {
+        const afterElement = getDragAfterElement(group, event.clientY);
+        if (afterElement == null) {
+          group.appendChild(draggedItem);
+        } else {
+          group.insertBefore(draggedItem, afterElement);
+        }
+      }
+    }
+
+    function drop(event) {
+      event.preventDefault();
+      const group = event.target.closest('.group');
+      if (group && group.contains(draggedItem)) {
+        group.appendChild(draggedItem);
+      }
+    }
+
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll('.user-story:not(.dragging)')];
+
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Drag and drop event handlers for groups
+    let draggedGroup = null;
+
+    function dragStartGroup(event) {
+      draggedGroup = event.target;
+      event.target.classList.add('dragging');
+    }
+
+    function dragEndGroup(event) {
+      event.target.classList.remove('dragging');
+    }
+
+    function dragOverGroup(event) {
+      event.preventDefault();
+      const groupRow = event.target.closest('#groupRow');
+      if (groupRow) {
+        const afterElement = getDragAfterGroup(groupRow, event.clientX);
+        if (afterElement == null) {
+          groupRow.appendChild(draggedGroup);
+        } else {
+          groupRow.insertBefore(draggedGroup, afterElement);
+        }
+      }
+    }
+
+    function dropGroup(event) {
+      event.preventDefault();
+      const groupRow = event.target.closest('#groupRow');
+      if (groupRow) {
+        groupRow.appendChild(draggedGroup);
+      }
+    }
+
+    function getDragAfterGroup(container, x) {
+      const draggableGroups = [...container.querySelectorAll('.group-container:not(.dragging)')];
+
+      return draggableGroups.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = x - box.left - box.width / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Event listener for "Group User Stories" button
+    document.getElementById('groupBtn').addEventListener('click', () => {
+      groupUserStories();
+      document.getElementById('groupBtn').setAttribute('disabled', 'true');
+      document.getElementById('priorityBtn').removeAttribute('disabled');
+    });
+
+    // Event listener for "Assign Priority" button
+    document.getElementById('priorityBtn').addEventListener('click', () => {
+      assignPriority();
+      document.getElementById('priorityBtn').setAttribute('disabled', 'true');
+      document.getElementById('startAgainBtn').removeAttribute('disabled');
+    });
+
+    // Event listener for "Start Again" button
+    document.getElementById('startAgainBtn').addEventListener('click', () => {
+      generateUserStories();
+      document.getElementById('groupBtn').removeAttribute('disabled');
+      document.getElementById('priorityBtn').setAttribute('disabled', 'true');
+      document.getElementById('startAgainBtn').setAttribute('disabled', 'true');
+    });
+
+    // Generate initial user stories
+    generateUserStories();
+  </script>
+</body>
+</html>

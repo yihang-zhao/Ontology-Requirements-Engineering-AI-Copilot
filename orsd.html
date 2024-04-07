@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORSD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <style>
+        .user-story-group {
+            border: 2px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: white;
+            transition: transform 0.3s;
+            font-size: 12px;
+        }
+        .user-story {
+            border: 1px solid #ccc;
+            padding: 5px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            font-size: 10px;
+        }
+        .orsd-button {
+            margin-right: 10px;
+        }
+        .orsd-button.active {
+            color: #fff;
+        }
+        .orsd-option {
+            cursor: pointer;
+            padding: 5px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+        }
+        .orsd-option:hover {
+            opacity: 0.8;
+        }
+        .section {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Miro Plugin</a>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="ideation.html">Ideation</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="recombination.html">Recombination</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="group.html">Group & Priority</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="orsd.html">ORSD</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-6">
+                <h2>User Stories</h2>
+                <div class="row" id="userStoryGroups"></div>
+            </div>
+            <div class="col-md-6">
+                <h1>ORSD</h1>
+                <div class="row">
+                    <div class="col-md-12">
+                        <button class="btn btn-outline-primary orsd-button" data-orsd="intendedUsers" data-color="#007bff">Intended Users</button>
+                        <button class="btn btn-outline-success orsd-button" data-orsd="intendedUses" data-color="#28a745">Intended Uses</button>
+                        <button class="btn btn-outline-warning orsd-button" data-orsd="competencyQuestions" data-color="#ffc107">Competency Questions</button>
+                        <button class="btn btn-outline-danger orsd-button" data-orsd="terms" data-color="#dc3545">Terms</button>
+                    </div>
+                </div>
+                <div id="orsdContent" class="mt-4"></div>
+                <div class="section">
+                    <h4>Formality</h4>
+                    <select class="form-select" id="formality">
+                        <option value="highly informal">Highly Informal</option>
+                        <option value="semi-informal">Semi-Informal</option>
+                        <option value="semi-formal">Semi-Formal</option>
+                        <option value="rigorously formal">Rigorously Formal</option>
+                    </select>
+                </div>
+                <div class="section">
+                    <h4>Languages</h4>
+                    <select class="form-select" id="languages">
+                        <option value="OWL">OWL</option>
+                        <option value="RDF">RDF</option>
+                    </select>
+                </div>
+                <div class="text-center mt-4">
+                    <button id="downloadButton" class="btn btn-primary">Download</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const userStories = generateUserStories();
+        const userStoryGroups = document.getElementById("userStoryGroups");
+        const orsdButtons = document.querySelectorAll(".orsd-button");
+        const orsdContent = document.getElementById("orsdContent");
+        const downloadButton = document.getElementById("downloadButton");
+
+        // Render user stories
+        renderUserStories();
+
+        // ORSD button click event
+        orsdButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                button.classList.toggle("active");
+                button.style.backgroundColor = button.classList.contains("active") ? button.getAttribute("data-color") : "";
+                renderORSDContent();
+            });
+        });
+
+        // Render ORSD content
+        function renderORSDContent() {
+            orsdContent.innerHTML = "";
+
+            orsdButtons.forEach(button => {
+                if (button.classList.contains("active")) {
+                    const orsdType = button.getAttribute("data-orsd");
+                    const relatedParts = getRelatedParts(orsdType);
+
+                    relatedParts.forEach(part => {
+                        const partElement = document.createElement("div");
+                        partElement.classList.add("orsd-option");
+                        partElement.style.backgroundColor = button.getAttribute("data-color");
+                        partElement.style.color = "#fff";
+                        partElement.textContent = part;
+                        partElement.addEventListener("click", () => {
+                            highlightRelatedPart(part, orsdType, button.getAttribute("data-color"));
+                        });
+                        partElement.addEventListener("dblclick", (event) => {
+                            const newContent = prompt("Enter new content:", part);
+                            if (newContent !== null) {
+                                partElement.textContent = newContent;
+                            }
+                            event.stopPropagation();
+                        });
+                        orsdContent.appendChild(partElement);
+                    });
+                }
+            });
+        }
+
+        // Get related parts from user stories based on ORSD type
+        function getRelatedParts(orsdType) {
+            const relatedParts = [];
+
+            userStories.forEach(group => {
+                group.stories.forEach(story => {
+                    if (orsdType === "intendedUsers") {
+                        relatedParts.push(story.persona);
+                    } else if (orsdType === "intendedUses") {
+                        relatedParts.push(story.goals);
+                    } else if (orsdType === "competencyQuestions") {
+                        relatedParts.push(story.title);
+                    } else if (orsdType === "terms") {
+                        relatedParts.push(story.title);
+                    }
+                });
+            });
+
+            return relatedParts;
+        }
+
+        // Highlight related part in user stories
+        function highlightRelatedPart(part, orsdType, color) {
+            const userStoryElements = document.querySelectorAll(".user-story");
+
+            userStoryElements.forEach(storyElement => {
+                if (orsdType === "competencyQuestions") {
+                    const titleElement = storyElement.querySelector(".story-title");
+                    if (titleElement.textContent.includes(part)) {
+                        storyElement.style.backgroundColor = color;
+                    } else {
+                        storyElement.style.backgroundColor = "";
+                    }
+                } else {
+                    const titleElement = storyElement.querySelector(".story-title");
+                    const personaElement = storyElement.querySelector(".story-persona");
+                    const goalsElement = storyElement.querySelector(".story-goals");
+
+                    titleElement.style.backgroundColor = titleElement.textContent.includes(part) ? color : "";
+                    personaElement.style.backgroundColor = personaElement.textContent.includes(part) ? color : "";
+                    goalsElement.style.backgroundColor = goalsElement.textContent.includes(part) ? color : "";
+                }
+            });
+        }
+
+        // Download button click event
+        downloadButton.addEventListener("click", () => {
+            const orsdData = {
+                intendedUsers: [],
+                intendedUses: [],
+                competencyQuestions: [],
+                terms: [],
+                formality: document.getElementById("formality").value,
+                languages: document.getElementById("languages").value
+            };
+
+            orsdButtons.forEach(button => {
+                if (button.classList.contains("active")) {
+                    const orsdType = button.getAttribute("data-orsd");
+                    const relatedParts = Array.from(orsdContent.children).map(child => child.textContent);
+                    orsdData[orsdType] = relatedParts;
+                }
+            });
+
+            const dataStr = JSON.stringify(orsdData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            const downloadLink = document.createElement('a');
+            downloadLink.setAttribute('href', dataUri);
+            downloadLink.setAttribute('download', 'orsd_data.json');
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        });
+
+        // Generate random user stories
+        function generateUserStories() {
+            const groups = [
+                { name: "Group 1", color: "#E8F5E9", priority: Math.floor(Math.random() * 5) + 1 },
+                { name: "Group 2", color: "#FFF3E0", priority: Math.floor(Math.random() * 5) + 1 }
+            ];
+
+            const stories = [
+                {
+                    title: "Ontology Development",
+                    persona: "As an ontology engineer",
+                    goals: "I want to create a domain-specific ontology",
+                    description: "The ontology should capture the key concepts, relationships, and constraints of the domain.",
+                    priority: Math.floor(Math.random() * 5) + 1
+                },
+                {
+                    title: "Ontology Integration",
+                    persona: "As a knowledge engineer",
+                    goals: "I want to integrate multiple ontologies",
+                    description: "The integration should resolve conflicts and ensure semantic consistency across the ontologies.",
+                    priority: Math.floor(Math.random() * 5) + 1
+                },
+                {
+                    title: "Ontology Visualization",
+                    persona: "As a data scientist",
+                    goals: "I want to visualize the ontology structure",
+                    description: "The visualization should provide an intuitive representation of the ontology's classes, properties, and hierarchies.",
+                    priority: Math.floor(Math.random() * 5) + 1
+                },
+                {
+                    title: "Ontology Alignment",
+                    persona: "As an ontology expert",
+                    goals: "I want to align ontologies from different domains",
+                    description: "The alignment should establish mappings between similar concepts across the ontologies.",
+                    priority: Math.floor(Math.random() * 5) + 1
+                },
+                {
+                    title: "Ontology Reasoning",
+                    persona: "As a researcher",
+                    goals: "I want to perform reasoning over the ontology",
+                    description: "The reasoning should derive new knowledge and check the consistency of the ontology.",
+                    priority: Math.floor(Math.random() * 5) + 1
+                },
+                {
+                    title: "Ontology Validation",
+                    persona: "As a domain expert",
+                    goals: "I want to validate the ontology against domain knowledge",
+                    description: "The validation should ensure that the ontology accurately represents the domain concepts and relationships.",
+                    priority: Math.floor(Math.random() * 5) + 1
+                }
+            ];
+
+            const userStories = [];
+
+            groups.forEach(group => {
+                const groupStories = [];
+                for (let i = 0; i < 2; i++) {
+                    const randomStory = stories[Math.floor(Math.random() * stories.length)];
+                    groupStories.push(randomStory);
+                }
+                userStories.push({ group: group.name, color: group.color, priority: group.priority, stories: groupStories });
+            });
+
+            return userStories;
+        }
+
+        // Render user stories
+        function renderUserStories() {
+            userStories.forEach(group => {
+                const groupElement = document.createElement("div");
+                groupElement.classList.add("col-md-6", "user-story-group");
+                groupElement.style.backgroundColor = group.color;
+                groupElement.innerHTML = `
+                    <h3>${group.group}</h3>
+                    <p><strong>Priority:</strong> ${group.priority}</p>
+                `;
+
+                group.stories.forEach(story => {
+                    const storyElement = document.createElement("div");
+                    storyElement.classList.add("user-story");
+                    storyElement.innerHTML = `
+                        <p><strong>Title:</strong> <span class="story-title">${story.title}</span></p>
+                        <p><strong>Persona:</strong> <span class="story-persona">${story.persona}</span></p>
+                        <p><strong>Goals:</strong> <span class="story-goals">${story.goals}</span></p>
+                        <p><strong>Description:</strong> <span class="story-description">${story.description}</span></p>
+                        <p><strong>Priority:</strong> ${story.priority}</p>
+                    `;
+                    groupElement.appendChild(storyElement);
+                });
+
+                userStoryGroups.appendChild(groupElement);
+            });
+        }
+    </script>
+</body>
+</html>
